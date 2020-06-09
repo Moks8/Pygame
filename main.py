@@ -1,38 +1,120 @@
-import pygame
+import pygame as pg
 from pygame.locals import *
 import sys
 
+BACKGROUND = (50,50,50)
+YELLOW = (255,255,0)
 
-pygame.init() #encapsula la libreria sdl (entra a la pantalla al teclado, todo el paripe multimedia de nuestra maquina)
+class Ball: 
+    def __init__(self):
+        self.vx = 5
+        self.vy = 5
+        self.Cx = 400
+        self.Cy = 300
+        self.h = 20
+        self.w = 20
 
-pantalla = pygame.display.set_mode((600,400)) #tomar control de la pantalla y tamaño
-pygame.display.set_caption("Hola Mundo")
+        self.image = pg.Surface((self.h, self.w))
+        self.image.fill(YELLOW)
 
-rojo = 0
-direccion = 1
-juego_activo = True
-while juego_activo:
-    for event in pygame.event.get():
-        if event.type == QUIT: #boton de cierre de ventana
-            juego_activo = False
-            
-    if rojo >= 255:
-        direccion= -1
+    @property
+    def posx(self):
+        return self.Cx - self.w // 2
+        
+    @property
+    def posy(self):
+        return self.Cy - self.h // 2
 
-    if rojo <= 0:
-        direccion = 1
-    if rojo <= 0:
-        direccion = 1 
+    def move(self, limSupX, limSupY):
+        if self.Cx >= limSupX or self.Cx <=0:
+            self.vx *= -1
 
-    rojo += direccion
+        if self.Cy >= limSupY or self.Cy <=0:
+            self.vy *= -1
+                
+        self.Cx += self.vx
+        self.Cy += self.vy
 
-    pantalla.fill((rojo,0,0)) #para colores
-    pygame.display.flip() #pinta la pantalla, sin esto no hay color, no se actualiza
+class Racket:
+    def __init__(self):
+        self.vx = 0
+        self.vy = 5
+        self.Cx = 30
+        self.Cy = 300
+        self.h = 100
+        self.w = 25
 
-    pygame.time.delay(10) #para que se apague, es en milisegundos
+        self.image = pg.Surface((self.w, self.h))
+        self.image.fill((255,255,255))
 
-pygame.quit()
-sys.exit()
+    @property
+    def posx(self):
+        return self.Cx - self.w // 2
+        
+    @property
+    def posy(self):
+        return self.Cy - self.h // 2
+    
+    def move(self,limSupX, limSupY):        
+        self.Cx += self.vx
+        self.Cy += self.vy
+
+        if self.Cy < self.h // 2:
+            self.Cy = self.h //2
+
+        if self.Cy > limSupY - self.h // 2:
+            self.Cy = limSupY - self.h //2
+
+        
+class Game:
+    def __init__(self):
+        self.pantalla = pg.display.set_mode((800, 600))
+        self.pantalla.fill(BACKGROUND)
+        self.fondo = pg.image.load("resources/fondo.jpg")
+        self.pantalla.blit(self.fondo,(0,0))
+        self.ball = Ball()
+        self.playerOne= Racket()
 
 
+        pg.display.set_caption("Pong")
 
+    def main_loop(self):
+        game_over = False
+
+        while not game_over:
+            for event in pg.event.get():
+                if event.type == QUIT:
+                    game_over = True
+
+                if event.type == KEYDOWN:    #se hunde, KEYUP, se libera
+                    if event.key == K_UP:
+                        self.playerOne.vy = -5 #la velocidad refleja el estado de movimiento
+                    if event.key == K_DOWN:
+                        self.playerOne.vy = 5
+
+            key_pressed = pg.key.get_pressed() #lista donde te deja almacenada las teclas que han sido pulsadas
+            if key_pressed[K_UP]:
+                self.playerOne.vy = -5
+            elif key_pressed[K_DOWN]:
+                self.playerOne.vy = 5
+            else:
+                self.playerOne.vy = 0 # la velocidad solo esta incluida cuando solo lo estoy pulsando
+            self.pantalla.blit(self.fondo,(0,0))
+            self.pantalla.blit(self.ball.image,(self.ball.posx,self.ball.posy))
+            self.pantalla.blit(self.playerOne.image,(self.playerOne.posx,self.playerOne.posy))
+
+            self.ball.move(800, 600)
+            self.playerOne.move(800,600)
+
+            pg.display.flip()
+
+    def quit(self):
+        pg.quit()
+        sys.exit()
+
+
+if __name__ == "__main__":
+    pg.init()
+    game = Game()
+    game.main_loop()
+    game.quit()
